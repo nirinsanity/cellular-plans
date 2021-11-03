@@ -1,5 +1,6 @@
 <template>
 	<div id="app">
+		<div id="app-version">v1.01</div>
 		<div class="top-row">
 			<!-- <input
 				type="number"
@@ -24,12 +25,13 @@
 				min="0"
 				max="1"
 				step="0.01"
-				@input="sortPlans"
+				@input="sortPlans(); changeValueColors()"
 				v-model="valueWeight"
 			/>
 			<div class="slider-labels">
-				<span>Value for validity</span>
-				<span>Value for data</span>
+				<span :style="getFont('validity')">Value for validity</span>
+				<span style="font-size: 1.4em">&nbsp;</span>
+				<span :style="getFont('data')">Value for data</span>
 			</div>
 		</div>
 		<div class="heading">Filters</div>
@@ -183,12 +185,44 @@ export default {
 		sortPlans() {
 			sortPlansByWeight(this.outputPlans, this.valueWeight);
 		},
+		changeValueColors() {
+			
+		},
+		getFont(param) {
+			let weight = parseFloat(this.valueWeight)
+			if (param == 'validity') {
+				weight = 1 - weight;
+			}
+			let size = 1 + (weight*0.4)
+
+			let r = 54, g = 181, b = 84;
+			if (weight >= 0.5) {
+				r = r - ((1-weight)*r*2);
+				g = g - ((1-weight)*g*2);
+				b = b - ((1-weight)*b*2);
+			} else {
+				r = (0.7-weight)*255
+				g = (0.7-weight)*255
+				b = (0.7-weight)*255
+			}
+
+			return {
+				'font-size': `${size}em`,
+				'color': `rgb(${r}, ${g}, ${b})`,
+			}
+		},
 	},
 };
 </script>
 
 <style>
 @import './assets/styles/loader.css';
+
+#app-version {
+	font-size: 0.7em;
+	margin: 0.5em;
+	color: gray;
+}
 
 body {
 	margin: 0;
@@ -216,7 +250,7 @@ body {
 	display: flex;
 	width: 500px;
 	max-width: 90vw;
-	margin-top: 1em;
+	/* margin-top: 1em; */
 	/* flex-direction: row;
 	justify-content: center;
 	align-items: center; */
