@@ -1,4 +1,5 @@
-# cellular-plans
+# Cellular Plans
+App to find the best cellular plans for you. Works for Airtel and Jio as of 4 November 2021.
 
 ## Project setup
 ```
