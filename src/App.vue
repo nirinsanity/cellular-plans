@@ -1,23 +1,40 @@
 <template>
 	<div id="app">
-		<div id="app-version">v1.01</div>
+		<div id="app-version">v1.1</div>
+		<!-- <div>
+			<label>
+				<input type="radio" v-model="numberOrCarrier" value="number">
+				Enter phone number
+			</label>
+			<label>
+				<input type="radio" v-model="numberOrCarrier" value="carrier">
+				Select carrier
+			</label>
+		</div> -->
 		<div class="top-row">
-			<!-- <input
+			<input
 				type="number"
 				pattern="\d*"
 				placeholder="Enter your phone no.."
 				v-model="phoneNumber"
 				@keyup="checkIfEnter"
 				class="phoneNumber"
-			/> -->
-			<select id="selected-carrier" v-model="carrierName">
+				v-if="numberOrCarrier == 'number'"
+			/>
+			<button v-if="numberOrCarrier == 'number'" @click="getPlans">Fetch</button>
+			<select id="selected-carrier" v-model="carrierName" @change="getPlans" v-if="numberOrCarrier == 'carrier'">
 				<option value="-1" disabled selected>Please select a carrier</option>
 				<option value="jio">Jio</option>
 				<option value="airtel">Airtel</option>
 			</select>
-			<button @click="getPlans">Fetch</button>
 		</div>
-		<div class="heading">Optimise</div>
+		<!-- <div
+			class="phone-message"
+			:style="{ visibility: numberOrCarrier == 'carrier' ? '' : 'hidden'}"
+		>
+			For more accurate plans, enter your phone number. I do not store your phone number anywhere and I don't send it to anyone except the cellular company.
+		</div> -->
+		<div class="heading">Prioritise</div>
 		<div class="options-container">
 			<input
 				type="range"
@@ -48,6 +65,10 @@
 				:max="maxRate"
 				step=""
 				v-model="curRate"
+				@touchstart="isMovingCostSlider = true"
+				@touchend="isMovingCostSlider = false"
+				@mousedown="isMovingCostSlider = true"
+				@mouseup="isMovingCostSlider = false"
 			/>
 		</div>
 		<div class="options-container">
@@ -63,6 +84,10 @@
 				:max="maxDuration"
 				step=""
 				v-model="curDuration"
+				@touchstart="isMovingDurationSlider = true"
+				@touchend="isMovingDurationSlider = false"
+				@mousedown="isMovingDurationSlider = true"
+				@mouseup="isMovingDurationSlider = false"
 			/>
 		</div>
 		<div class="heading">Best Plans For You <span style="color: gray">({{filteredPlans.length}})</span></div>
@@ -73,46 +98,49 @@
 				:key="'plan' + index"
 				class="cellular-plan"
 			>
-				<div class="plan-detail-top">
+				<!-- <div class="plan-detail-top"> -->
+					<div class="plan-index">
+						{{index + 1}}.
+					</div>
 					<div class="plan-detail">
 						<div class="plan-detail-title">Plan</div>
-						<div class="plan-detail-value">₹{{ plan.totalCost }}</div>
+						<div class="plan-detail-value" :class="{ 'plan-detail-highlighted': isMovingCostSlider }">₹{{ plan.totalCost }}</div>
 					</div>
 					<div class="plan-detail">
 						<div class="plan-detail-title">Data</div>
-						<p style="display: flex; align-items: center">
-							<span v-if="plan.planGbPerDay >= 1" class="plan-detail-value">
-								{{ plan.planGbPerDay }}GB/day
-							</span>
-							<span v-else-if="plan.planGbPerDay > 0">{{ plan.planGbPerDay * 1024 }}MB/day</span>
-							<span v-if="plan.planGbPerDay && plan.planGb">&nbsp;+&nbsp;</span>
-							<span v-if="plan.planGb >= 1" class="plan-detail-value extra-data">
-								{{ plan.planGb }}GB
-							</span>
-							<span v-else-if="plan.planGb > 0" class="plan-detail-value extra-data">{{ plan.planGb * 1024 }}MB</span>
-						</p>
+						<p>{{getPlanData(plan)}}</p>
 					</div>
 					<div class="plan-detail">
 						<div class="plan-detail-title">Validity</div>
-						<div>{{ plan.planDays }} days</div>
+						<div class="plan-detail-value" :class="{ 'plan-detail-highlighted': isMovingDurationSlider }">{{ plan.planDays }} days</div>
 					</div>
-				</div>
-				<div class="plan-detail-bottom">
+					<div class="plan-detail empty-detail">
+						<div class="plan-detail-title">&nbsp;</div>
+						<div style="font-size: 1.4em">&nbsp;</div>
+					</div>
+				<!-- </div> -->
+				<!-- <div class="plan-detail-bottom"> -->
 					<div class="plan-detail">
 						<div class="plan-detail-title">Cost/day</div>
-						<div>₹{{ plan.costPerDay.toFixed(1) }}/day</div>
+						<div :style="getFont('validity', true)">₹{{ plan.costPerDay.toFixed(1) }}/day</div>
 					</div>
 					<div class="plan-detail">
 						<div class="plan-detail-title">Cost/GB</div>
-						<div>₹{{ plan.costPerGb.toFixed(1) }}/GB</div>
+						<div :style="getFont('data', true)">₹{{ plan.costPerGb.toFixed(1) }}/GB</div>
 					</div>
 					<div class="plan-detail">
 						<div class="plan-detail-title">Total Data</div>
 						<div v-if="plan.totalGb >=1">{{ plan.totalGb }}GB</div>
 						<div v-else>{{ (plan.totalGb * 1024).toFixed(1) }}MB</div>
 					</div>
+					<div class="plan-detail empty-detail">
+						<div class="plan-detail-title">&nbsp;</div>
+						<div style="font-size: 1.4em">&nbsp;</div>
+					</div>
+					<button class="buy-button" @click="purchasePlan(plan)">Buy this plan</button>
+					<!-- <div style="font-size: 1em">&nbsp;</div> -->
 					<!-- {{plan}} -->
-				</div>
+				<!-- </div> -->
 			</div>
 		</div>
 		<div v-else>No plans for you.</div>
@@ -138,6 +166,10 @@ export default {
 			minDuration: 0,
 			curDuration: 0,
 			maxDuration: 0,
+			isMovingCostSlider: false,
+			isMovingDurationSlider: false,
+			numberOrCarrier: "carrier",
+			// numberOrCarrier: "number",
 		};
 	},
 	computed: {
@@ -161,13 +193,14 @@ export default {
 			this.loadingPlans = true;
 
 			let carrierName = this.carrierName;
+			console.log(carrierName)
 			if (carrierName == "-1") {
 				carrierName = null;
 			}
 			this.outputPlans.length = 0;
 			let values = await fetchPlans(
 				this.phoneNumber,
-				this.carrierName,
+				carrierName,
 				this.outputPlans
 			);
 			if (!values) {
@@ -188,7 +221,7 @@ export default {
 		changeValueColors() {
 			
 		},
-		getFont(param) {
+		getFont(param, constantFontSize) {
 			let weight = parseFloat(this.valueWeight)
 			if (param == 'validity') {
 				weight = 1 - weight;
@@ -206,11 +239,49 @@ export default {
 				b = (0.7-weight)*255
 			}
 
-			return {
-				'font-size': `${size}em`,
+			let style = {
 				'color': `rgb(${r}, ${g}, ${b})`,
 			}
+
+			constantFontSize = false
+			if (constantFontSize) {
+				style['font-size'] = `1em`
+			} else {
+				style['font-size'] = `${size}em`
+			}
+
+			return style
 		},
+		getPlanData(plan) {
+			let planStr = ''
+			let planGbPerDay = plan.planGbPerDay
+			if (planGbPerDay) {
+				planStr += `${planGbPerDay}GB/day`
+			} 
+
+			let planGb = plan.planGb
+			if (planGb) {
+				if (planGbPerDay) {
+					planStr += ` + `
+				}
+				if (planGb >= 1) {
+					planStr += `${planGb}GB`
+				} else {
+					planStr += `${planGb*1024}MB`
+				}
+			}
+
+			return planStr
+		},
+		purchasePlan(plan) {
+			if (this.carrierName == "airtel") {
+				window.open(`https://www.airtel.in/prepaid-recharge/?amount=${plan.totalCost}&anid=RECHARGE-ONLINE`)
+			} else if (this.carrierName == "jio") {
+				window.open(`https://www.jio.com/selfcare/recharge/mobility/?ptab=Popular%20Plans&planId=${plan.id}`)
+			} else {
+				alert("Please select a valid carrier.")
+			}
+		}
 	},
 };
 </script>
@@ -247,6 +318,7 @@ body {
 }
 
 .top-row {
+	height: 2em;
 	display: flex;
 	width: 500px;
 	max-width: 90vw;
@@ -256,12 +328,20 @@ body {
 	align-items: center; */
 }
 
+.phone-message {
+	color: darkgray;
+	font-size: 0.8em;
+	max-width: 90vw;
+	width: 500px;
+}
+
 .top-row * {
 	flex: 1;
 	font-size: 1em;
 }
 
 .phoneNumber {
+	flex: 3;
 	font-size: 1em;
 	width: 7em;
 }
@@ -293,15 +373,40 @@ body {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 	margin: 0.5em;
 	padding: 0.25em;
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-columns: 0.5fr 1fr 1fr 1fr 0fr;
+	/* display: flex; */
+	/* flex-direction: column; */
 	width: 500px;
 	max-width: 90vw;
 	/* justify-content: space-between; */
 }
 
+.plan-index {
+	grid-row: 1/4;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.5em;
+	background: rgb(154, 189, 237);
+	color: white;
+}
+
 .plan-detail {
-	margin: 0.25em 0.75em;
+	margin: 0.25em 0;
+}
+
+.plan-detail-value {
+	transition: 0.2s;
+}
+
+.plan-detail-highlighted {
+	font-size: 1.4em;
+	color: cornflowerblue;
+}
+
+.empty-detail {
+	width: 0;
 }
 
 .plan-detail p {
@@ -325,13 +430,47 @@ body {
 	font-size: 0.7em;
 }
 
+.buy-button {
+	grid-column: 2/5;
+	justify-self: center;
+	border: none;
+	margin: 0.5em;
+	padding: 0.5em 1em;
+	background: rgb(154, 189, 237);
+	color: white;
+	border-radius: 0.25em;
+	cursor: pointer;
+	transition: 0.2s;
+	font-size: 1em;
+}
+
+.buy-button:hover {
+	background: rgb(104, 158, 232)
+}
+
 .extra-data {
-	font-size: 0.8em;
+	/* font-size: 0.8em; */
 }
 
 @media (max-width: 600px) {
+	/* Change height to 100.1vh so that address bar vanishes on iOS Safari */
 	#app {
-		height: 101vh;
+		height: 100.1vh;
+	}
+
+	.plan-index {
+		grid-column: 1/5;
+		border-bottom: 1px solid #eee;
+		margin-bottom: 0.25em;
+		padding: 0.25em;
+	}
+
+	.cellular-plan {
+		grid-template-columns: 1fr 1fr 1fr 0fr;
+	}
+
+	.buy-button {
+		grid-column: 1/5;
 	}
 }
 
