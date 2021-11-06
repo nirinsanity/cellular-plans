@@ -1,7 +1,5 @@
 const axios = require('axios')
 
-const sampleNumbers = require('./samplePhoneNumbers')
-
 let createResponse = (statusCode, body) => {
     return {
         statusCode: statusCode,
@@ -15,32 +13,47 @@ let createResponse = (statusCode, body) => {
 }
 
 let fetchJioPlans = async (phoneNumber) => {
-    let cookieUrl = `https://www.jio.com/api/jio-recharge-service/recharge/mobility/number/${phoneNumber}`
-    let cookieResp
-    try {
-        cookieResp = await axios.get(cookieUrl)
-    } catch (e) {
-        if (e.response.data.errorMessage === 'NOT_SUBSCRIBED_USER') {
-            return {
-                error: 'Please enter a valid Jio number.'
-            }
-        } else {
-            return {
-                error: 'There was an error while checking phone number validity.'
-            }
-        }
-    }
-    let headers = cookieResp.headers
-    let setCookie = headers['set-cookie']
-    let cookie = setCookie.map(c => c.split(';')[0]).join('; ')
+    let data
 
-    let url = `https://www.jio.com/api/jio-recharge-service/recharge/plans/serviceId/${phoneNumber}`
-    let resp = await axios.get(url, {
-        headers: {
-            'Cookie': cookie,
+    if (phoneNumber) {
+        let cookieUrl = `https://www.jio.com/api/jio-recharge-service/recharge/mobility/number/${phoneNumber}`
+        let cookieResp
+        try {
+            cookieResp = await axios.get(cookieUrl)
+        } catch (e) {
+            if (e.response.data.errorMessage === 'NOT_SUBSCRIBED_USER') {
+                return {
+                    error: 'Please enter a valid Jio number.'
+                }
+            } else {
+                return {
+                    error: 'There was an error while checking phone number validity.'
+                }
+            }
         }
-    })
-    let data = resp.data
+        let headers = cookieResp.headers
+        let setCookie = headers['set-cookie']
+        let cookie = setCookie.map(c => c.split(';')[0]).join('; ')
+    
+        let url = `https://www.jio.com/api/jio-recharge-service/recharge/plans/serviceId/${phoneNumber}`
+        let resp = await axios.get(url, {
+            headers: {
+                'Cookie': cookie,
+            }
+        })
+        data = resp.data
+    } else {
+        let url = 'https://www.jio.com/en-in/4g-plans'
+        let resp
+        try {
+            resp = await axios.get(url)
+        } catch (e) {
+            return {
+                error: 'There was an error while fetching Jio plans.'
+            }
+        }
+        data = resp.data
+    }
     return data
 }
 
@@ -56,7 +69,13 @@ function makeid(length) {
 
 
 let fetchAirtelPlans = async (phoneNumber) => {
-    let url = `https://digi-api.airtel.in/airtel-mobility-recharge/prepaid/v1/get/combined/packs?siNumber=${phoneNumber}`
+    let url
+    if (phoneNumber) {
+        url = `https://digi-api.airtel.in/airtel-mobility-recharge/prepaid/v1/get/combined/packs?siNumber=${phoneNumber}`
+    } else {
+        url = `https://digi-api.airtel.in/airtel-mobility-recharge/prepaid/v1/get/combined/packs?circleId=14`
+    }
+
     let resp
     try {
         resp = await axios.get(url, {
@@ -116,7 +135,6 @@ async function main (event) {
     let data
     if (!carrierName) {
         for (let carrier of availableCarriers) {
-            phoneNumber = phoneNumber || sampleNumbers[carrier.name]
             data = await carrier.method(phoneNumber)
             if (data.error) {
                 continue
@@ -138,7 +156,6 @@ async function main (event) {
                 error: 'Invalid carrier name'
             })
         }
-        phoneNumber = phoneNumber || sampleNumbers[availableCarrier.name]
         data = await availableCarrier.method(phoneNumber)
         if (data.error) {
             return createResponse(400, {

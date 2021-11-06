@@ -1,6 +1,10 @@
 <template>
 	<div id="app">
-		<div id="app-version">v1.1</div>
+		<div class="page-division first-division">
+		<span id="app-version">v1.2</span>
+		<!-- <div class="big heading">
+			Cellular Plans
+		</div> -->
 		<!-- <div>
 			<label>
 				<input type="radio" v-model="numberOrCarrier" value="number">
@@ -9,6 +13,16 @@
 			<label>
 				<input type="radio" v-model="numberOrCarrier" value="carrier">
 				Select carrier
+			</label>
+		</div> -->
+		<!-- <div>
+			<label>
+				<input type="radio" v-model="preOrPostPaid" value="prepaid">
+				Prepaid
+			</label>
+			<label>
+				<input type="radio" v-model="preOrPostPaid" value="postpaid">
+				Postpaid
 			</label>
 		</div> -->
 		<div class="top-row">
@@ -34,6 +48,7 @@
 		>
 			For more accurate plans, enter your phone number. I do not store your phone number anywhere and I don't send it to anyone except the cellular company.
 		</div> -->
+		<div :style="{opacity: filteredPlans.length ? 1 : 0.1}" style="transition: 1s">
 		<div class="heading">Prioritise</div>
 		<div class="options-container">
 			<input
@@ -90,17 +105,27 @@
 				@mouseup="isMovingDurationSlider = false"
 			/>
 		</div>
+		</div>
+		</div>
+
+		<div class="page-division second-division">
 		<div class="heading">Best Plans For You <span style="color: gray">({{filteredPlans.length}})</span></div>
-		<div class="lds-ellipsis" v-if="loadingPlans"><div></div><div></div><div></div><div></div></div>
+		<div class="lds-ellipsis loading-animation" v-if="loadingPlans"><div></div><div></div><div></div><div></div></div>
 		<div v-else-if="filteredPlans.length" class="output-plan">
+			<transition-group name="list" tag="div">
 			<div
 				v-for="(plan, index) in filteredPlans"
 				:key="'plan' + index"
 				class="cellular-plan"
+				:class="{'best-cellular-plan': index==0}"
 			>
 				<!-- <div class="plan-detail-top"> -->
 					<div class="plan-index">
-						{{index + 1}}.
+						<div class="plan-star">
+							<StarFill v-if="index==0" style="color: white" />
+						</div>
+						<div>{{index + 1}}.</div>
+						<div></div>
 					</div>
 					<div class="plan-detail">
 						<div class="plan-detail-title">Plan</div>
@@ -138,21 +163,25 @@
 						<div style="font-size: 1.4em">&nbsp;</div>
 					</div>
 					<button class="buy-button" @click="purchasePlan(plan)">Buy this plan</button>
-					<!-- <div style="font-size: 1em">&nbsp;</div> -->
 					<!-- {{plan}} -->
 				<!-- </div> -->
 			</div>
+			</transition-group>
 		</div>
 		<div v-else>No plans for you.</div>
+		</div>
 	</div>
 </template>
 
 <script>
 import { fetchPlans, sortPlansByWeight } from "./api";
+import StarFill from './assets/icons/star-fill.svg';
 
 export default {
 	name: "App",
-	components: {},
+	components: {
+		StarFill
+	},
 	data() {
 		return {
 			loadingPlans: false,
@@ -169,6 +198,7 @@ export default {
 			isMovingCostSlider: false,
 			isMovingDurationSlider: false,
 			numberOrCarrier: "carrier",
+			preOrPostPaid: "prepaid",
 			// numberOrCarrier: "number",
 		};
 	},
@@ -193,7 +223,6 @@ export default {
 			this.loadingPlans = true;
 
 			let carrierName = this.carrierName;
-			console.log(carrierName)
 			if (carrierName == "-1") {
 				carrierName = null;
 			}
@@ -290,7 +319,7 @@ export default {
 @import './assets/styles/loader.css';
 
 #app-version {
-	font-size: 0.7em;
+	font-size: 0.7rem;
 	margin: 0.5em;
 	color: gray;
 }
@@ -305,16 +334,55 @@ body {
 	margin: 0.5em;
 }
 
+.big.heading {
+	font-size: 1.7em;
+	color: dimgray	;
+}
+
 #app {
 	font-family: Avenir, Helvetica, Arial, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-align: center;
 	color: #2c3e50;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
 	height: 100vh;
+}
+
+select {
+	border-radius: 5px;
+	border: 1px solid black;
+	background: white;
+	color: black;
+}
+
+option {
+	background: white;
+	color: black;
+}
+
+.page-division {
+	/* max-width: 500px; */
+	max-width: 90vw;
+	display: grid;
+	/* align-items: center; */
+	/* align-self: center; */
+}
+
+.loading-animation {
+	justify-self: center;
+}
+
+.first-division {
+	justify-self: end;
+	align-self: center;
+}
+
+.second-division {
+	overflow-y: hidden;
+	width: 500px;
+	grid-template-rows: auto 1fr;
 }
 
 .top-row {
@@ -364,32 +432,40 @@ body {
 }
 
 .output-plan {
-	/* width: 40em; */
 	max-width: 95vw;
 	overflow-y: auto;
+	min-height: 20em;
 }
 
 .cellular-plan {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 	margin: 0.5em;
-	padding: 0.25em;
+	/* padding: 0.25em; */
 	display: grid;
 	grid-template-columns: 0.5fr 1fr 1fr 1fr 0fr;
 	/* display: flex; */
 	/* flex-direction: column; */
-	width: 500px;
-	max-width: 90vw;
 	/* justify-content: space-between; */
+}
+
+.best-cellular-plan .plan-index {
+	background: rgb(252, 186, 3);
 }
 
 .plan-index {
 	grid-row: 1/4;
-	display: flex;
+	/* display: flex;
 	align-items: center;
-	justify-content: center;
+	justify-content: center; */
+	display: grid;
+	grid-template-rows: 2fr 1fr 2fr;
 	font-size: 1.5em;
-	background: rgb(154, 189, 237);
+	background: rgb(3, 158, 255);
 	color: white;
+}
+
+.plan-star {
+	align-self: end;
 }
 
 .plan-detail {
@@ -436,7 +512,7 @@ body {
 	border: none;
 	margin: 0.5em;
 	padding: 0.5em 1em;
-	background: rgb(154, 189, 237);
+	background: rgb(3, 158, 255);
 	color: white;
 	border-radius: 0.25em;
 	cursor: pointer;
@@ -445,17 +521,27 @@ body {
 }
 
 .buy-button:hover {
-	background: rgb(104, 158, 232)
+	background: rgb(17, 135, 209)
 }
 
 .extra-data {
 	/* font-size: 0.8em; */
 }
 
-@media (max-width: 600px) {
+@media (max-width: 1000px) {
 	/* Change height to 100.1vh so that address bar vanishes on iOS Safari */
 	#app {
 		height: 100.1vh;
+		grid-template-columns: 1fr;
+		grid-template-rows: 0.1fr minmax(0.5em, 1fr);
+	}
+
+	.page-division {
+		justify-self: center;
+	}
+
+	.second-division {
+		min-height: 400px;
 	}
 
 	.plan-index {
@@ -463,6 +549,16 @@ body {
 		border-bottom: 1px solid #eee;
 		margin-bottom: 0.25em;
 		padding: 0.25em;
+		grid-template-rows: auto;
+		grid-template-columns: 6fr 1fr 6fr;
+	}
+
+	.plan-star {
+		justify-self: end;
+	}
+
+	.output-plan {
+		overflow-y: scroll;
 	}
 
 	.cellular-plan {
@@ -472,6 +568,19 @@ body {
 	.buy-button {
 		grid-column: 1/5;
 	}
+}
+
+/* Animations */
+.list-item {
+	display: inline-block;
+	margin-right: 10px;
+}
+.list-enter-active, .list-leave-active {
+	transition: all 0.2s;
+}
+.list-enter, .list-leave-to{
+	opacity: 0;
+	transform: translateY(30px);
 }
 
 </style>

@@ -5,71 +5,132 @@ let baseUrl = 'https://npcf8q2g3l.execute-api.ap-south-1.amazonaws.com/default/f
 
 let organiseJioPlans = (data) => {
     let planCategories = data.planCategories
-    // let plan = planCategories[0].subCategories[0].plans[0]
-    planCategories.forEach(planCategory => {
-        let subCategories = planCategory.subCategories
-        subCategories.forEach(subCategory => {
-            let plans = subCategory.plans
-            plans.forEach(plan => {
-                // let planName = plan.planName
-                let primeData = plan.primeData
-                let totalCost = parseInt(plan.amount)
+    if (planCategories) {
 
-                let planGbPerDay
-                let planGb = 0
-                if (primeData.offerBenefits1 && !primeData.offerBenefits2) {
-                    if (primeData.offerBenefits1.includes('/')) {
-                        planGbPerDay = parseFloat(primeData.offerBenefits1.split(' ')[0])
-                    } else if (primeData.offerBenefits1.includes(' ')){
-                        planGb = parseFloat(primeData.offerBenefits1.split(' ')[0])
-                    }
-                } else if (primeData.offerBenefits1 && primeData.offerBenefits2) {
-                    if (primeData.offerBenefits2.includes('/')) {
-                        planGbPerDay = parseFloat(primeData.offerBenefits1)
+        // let plan = planCategories[0].subCategories[0].plans[0]
+        planCategories.forEach(planCategory => {
+            let subCategories = planCategory.subCategories
+            subCategories.forEach(subCategory => {
+                let plans = subCategory.plans
+                plans.forEach(plan => {
+                    // Available Information
+                    // let planName = plan.planName
+                    let primeData = plan.primeData
+                    let totalCost = parseInt(plan.amount)
+    
+                    let planGbPerDay
+                    let planGb = 0
+                    if (primeData.offerBenefits1 && !primeData.offerBenefits2) {
+                        if (primeData.offerBenefits1.includes('/')) {
+                            planGbPerDay = parseFloat(primeData.offerBenefits1.split(' ')[0])
+                        } else if (primeData.offerBenefits1.includes(' ')){
+                            planGb = parseFloat(primeData.offerBenefits1.split(' ')[0])
+                        }
+                    } else if (primeData.offerBenefits1 && primeData.offerBenefits2) {
+                        if (primeData.offerBenefits2.includes('/')) {
+                            planGbPerDay = parseFloat(primeData.offerBenefits1)
+                        } else {
+                            planGb = parseFloat(primeData.offerBenefits1)
+                        }
                     } else {
-                        planGb = parseFloat(primeData.offerBenefits1)
+                        if (primeData.offerBenefits2.includes('/')) {
+                            planGbPerDay = parseFloat(primeData.offerBenefits2.split(' ')[0])
+                        } else if (primeData.offerBenefits2.includes(' ')){
+                            planGb = parseFloat(primeData.offerBenefits2.split(' ')[0])
+                        }
+    
+                    }
+                    if (primeData.offerBenefits5) {
+                        planGb += parseFloat(primeData.offerBenefits5.split(' ')[0])
+                    }
+    
+                    let planDays
+                    if (primeData.offerBenefits3 && primeData.offerBenefits4) {
+                        planDays = parseInt(primeData.offerBenefits3)
+                    } else if (primeData.offerBenefits4 && !primeData.offerBenefits3) {
+                        planDays = parseInt(primeData.offerBenefits4.split(' ')[0])
+                    }
+                    
+                    // Calculated Information
+                    let costPerDay = totalCost / planDays
+                    let totalGb = (planGbPerDay * planDays) + planGb
+                    let gbPerDay = totalGb / planDays
+                    let costPerGb = totalCost / totalGb
+    
+                    if (!gbPerDay) { return }
+                    
+                    outputPlans.push({
+                        // planName,
+                        id: plan.id,
+                        totalCost,
+                        planGbPerDay,
+                        planGb,
+                        planDays,
+                        costPerDay,
+                        totalGb,
+                        costPerGb,
+                        gbPerDay,
+                    })
+                })
+            })
+        })
+    } else {
+        let htmlText = data
+        let el = document.createElement( 'html' );
+        el.innerHTML = htmlText
+        
+        let planAccordion = el.querySelector('#plan-accordion')
+        let cards = planAccordion.querySelectorAll('.card')
+        cards.forEach(card => {
+            let collapse = card.querySelector('.collapse')
+            let plans = collapse.querySelectorAll('.pkv-card-row')
+            plans.forEach(plan => {
+                let totalCost = plan.querySelector('.amt_width').querySelector('.txt_amt').textContent.replace('`','')
+                totalCost = parseInt(totalCost)
+
+                let planDays = plan.querySelector('.val_width').querySelector('.pkv_txt_info').textContent
+                planDays = parseInt(planDays.split(' ')[0])
+
+                let planGbPerDay = 0
+                let planGb = plan.querySelector('.data_width').querySelector('.pkv_txt_info').textContent
+                if (planGb.includes('/')) {
+                    planGbPerDay = parseFloat(planGb.split(' ')[0])
+                    planGb = plan.querySelector('.data_width').querySelector('.txt-small-info').textContent.trim()
+                }
+                if (planGb) {
+                    for (let comp of planGb.split(' ')) {
+                        if (parseFloat(comp)) {
+                            planGb = parseFloat(comp)
+                            break
+                        }
                     }
                 } else {
-                    if (primeData.offerBenefits2.includes('/')) {
-                        planGbPerDay = parseFloat(primeData.offerBenefits2.split(' ')[0])
-                    } else if (primeData.offerBenefits2.includes(' ')){
-                        planGb = parseFloat(primeData.offerBenefits2.split(' ')[0])
-                    }
-
-                }
-                if (primeData.offerBenefits5) {
-                    planGb += parseFloat(primeData.offerBenefits5.split(' ')[0])
-                }
-
-                let planDays
-                if (primeData.offerBenefits3 && primeData.offerBenefits4) {
-                    planDays = parseInt(primeData.offerBenefits3)
-                } else if (primeData.offerBenefits4 && !primeData.offerBenefits3) {
-                    planDays = parseInt(primeData.offerBenefits4.split(' ')[0])
+                    planGb = 0
                 }
                 
+                    
+                // Calculated Information
                 let costPerDay = totalCost / planDays
                 let totalGb = (planGbPerDay * planDays) + planGb
                 let gbPerDay = totalGb / planDays
                 let costPerGb = totalCost / totalGb
 
-                if (!gbPerDay) { return }
-                
-                outputPlans.push({
-                    // planName,
-                    id: plan.id,
+                // if (!gbPerDay) { return }
+
+                let planDetails = {
                     totalCost,
+                    planDays,
                     planGbPerDay,
                     planGb,
-                    planDays,
                     costPerDay,
                     totalGb,
                     costPerGb,
                     gbPerDay,
-                })
+                }
+                outputPlans.push(planDetails)
             })
         })
-    })
+    }
 }
 
 let organiseAirtelPlans = (respData) => {
@@ -95,6 +156,7 @@ let organiseAirtelPlans = (respData) => {
 
     categories.forEach(category => {
         category.packs.forEach(pack => {
+            // Available Information
             let totalCost = pack.mrp
             
             let packDetails = pack.packDetails
@@ -117,6 +179,8 @@ let organiseAirtelPlans = (respData) => {
             let planDays = parseInt(packDetails.find(detail => detail.key === 'Validity').value.split(' ')[0])
             if (!planDays) { return }
 
+
+            // Calculated Information
             let costPerDay = totalCost / planDays
             let totalGb = (planGbPerDay * planDays) + planGb
             let gbPerDay = totalGb / planDays
@@ -160,10 +224,15 @@ export async function fetchPlans (phoneNumber, carrier, plansList) {
         return
     }
 
-    if (data.carrier == 'airtel') {
-        organiseAirtelPlans(data.data)
-    } else if (data.carrier == 'jio') {
-        organiseJioPlans(data.data)
+    try {
+        if (data.carrier == 'airtel') {
+            organiseAirtelPlans(data.data)
+        } else if (data.carrier == 'jio') {
+            organiseJioPlans(data.data)
+        }
+    } catch {
+        alert('There was an error while reading plan data. Refreshing the app might help.')
+        return
     }
 
     // populateRange('totalCost', 'rate')
@@ -196,19 +265,6 @@ function getMinMaxValues(param) {
     }
 }
 
-// function populateRange(param, elemName) {
-//     let plansByParam = outputPlans.sort((a, b) => {
-//         return a[param] - b[param]
-//     })
-
-//     document.getElementById(elemName + '-slider').min = plansByParam[0][param]
-//     document.getElementById(elemName + '-slider').max = plansByParam[plansByParam.length - 1][param]
-//     document.getElementById(elemName + '-slider').value = (plansByParam[0][param] + plansByParam[plansByParam.length - 1][param]) / 2
-//     document.getElementById(elemName + '-value').innerHTML = document.getElementById(elemName + '-slider').value
-//     document.getElementById(elemName + '-value-min').innerHTML = plansByParam[0][param]
-//     document.getElementById(elemName + '-value-max').innerHTML = plansByParam[plansByParam.length - 1][param]
-// }
-
 export function updatePlans(plans) {
     let output = document.querySelector('.output-plan')
     output.innerHTML = ''
@@ -235,22 +291,3 @@ export function sortPlansByWeight(outputPlans, weight) {
 
     return outputPlans
 }
-
-// document.getElementById('value-slider').oninput = function() {
-//     let plans = organisePlans()
-//     updatePlans(plans)
-// }
-
-// document.getElementById('rate-slider').oninput = function() {
-//     let plans = organisePlans()
-//     updatePlans(plans)
-//     document.getElementById('rate-value').innerHTML = this.value
-// }
-
-// document.getElementById('duration-slider').oninput = function() {
-//     let plans = organisePlans()
-//     updatePlans(plans)
-//     document.getElementById('duration-value').innerHTML = this.value
-// }
-
-// document.getElementById('phone-number').value = '9324805392'
