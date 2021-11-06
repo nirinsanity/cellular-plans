@@ -1,7 +1,7 @@
 <template>
 	<div id="app">
 		<div class="page-division first-division">
-		<span id="app-version">v1.2</span>
+		<span id="app-version">v1.21</span>
 		<!-- <div class="big heading">
 			Cellular Plans
 		</div> -->
@@ -522,6 +522,14 @@ option {
 
 .buy-button:hover {
 	background: rgb(17, 135, 209)
+}
+
+.best-cellular-plan .buy-button {
+	background: rgb(252, 186, 3);
+}
+
+.best-cellular-plan .buy-button:hover {
+	background: rgb(219, 161, 0);
 }
 
 .extra-data {

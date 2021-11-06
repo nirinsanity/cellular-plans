@@ -107,6 +107,12 @@ let organiseJioPlans = (data) => {
                 } else {
                     planGb = 0
                 }
+
+                let buyButton = plan.querySelector('.btn-md')
+                let onclickFn = buyButton.onclick.toString()
+                let str1 = onclickFn.split('BuyButton(')[1]
+                let str2 = str1.split(');')[0]
+                let planId = str2.split(',')[1].split("'")[1]
                 
                     
                 // Calculated Information
@@ -118,6 +124,7 @@ let organiseJioPlans = (data) => {
                 // if (!gbPerDay) { return }
 
                 let planDetails = {
+                    id: planId,
                     totalCost,
                     planDays,
                     planGbPerDay,
