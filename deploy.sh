@@ -18,7 +18,7 @@ powershell Compress-Archive -Path "server/index.js", "server/node_modules" -Upda
 FILENAME=index.zip
 FILESIZE=$(stat -c%s "$FILENAME")
 FILESIZE=`expr $FILESIZE / 1024`
-echo $FILESIZE KB
+echo 'Lambda function size:' $FILESIZE KB
 
 aws lambda update-function-code --function-name $function_name --zip-file fileb://index.zip
 
