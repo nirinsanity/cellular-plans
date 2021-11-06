@@ -14,7 +14,7 @@ elif [[ "$server" == "prod" ]]; then
     function_name="fetchCellularPlans"
 fi
 
-# powershell Compress-Archive -Path "server/index.js", "server/node_modules" -Update -DestinationPath "index.zip"
+powershell Compress-Archive -Path "server/index.js", "server/node_modules" -Update -DestinationPath "index.zip"
 FILENAME=index.zip
 FILESIZE=$(stat -c%s "$FILENAME")
 FILESIZE=`expr $FILESIZE / 1024`
