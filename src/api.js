@@ -214,7 +214,7 @@ let organiseAirtelPlans = (respData) => {
     })
 }
 
-export async function fetchPlans (phoneNumber, carrier, plansList) {
+export async function fetchPlans (phoneNumber, carrier, plansList, weight) {
     outputPlans = plansList
 
     let queryParams = {}
@@ -250,7 +250,6 @@ export async function fetchPlans (phoneNumber, carrier, plansList) {
     // maxRate = parseFloat(maxRate)
     // let maxDuration = document.getElementById('duration-slider').value
     // maxDuration = parseInt(maxDuration)
-    let weight = document.getElementById('value-slider').value
     sortPlansByWeight(outputPlans, weight)
 
     let costValues = getMinMaxValues('totalCost')

@@ -43,7 +43,8 @@ let fetchJioPlans = async (phoneNumber) => {
         })
         data = resp.data
     } else {
-        let url = 'https://www.jio.com/en-in/4g-plans'
+        // let url = 'https://www.jio.com/en-in/4g-plans'
+        let url = 'https://www.jio.com/api/jio-mdmdata-service/mdmdata/recharge/plans?productType=MOBILITY&billingType=1'
         let resp
         try {
             resp = await axios.get(url)

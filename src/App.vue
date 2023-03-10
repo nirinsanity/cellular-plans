@@ -1,7 +1,7 @@
 <template>
 	<div id="app">
 		<div class="page-division first-division">
-		<span id="app-version">v1.21</span>
+		<span id="app-version">v1.2.3</span>
 		<!-- <div class="big heading">
 			Cellular Plans
 		</div> -->
@@ -49,9 +49,9 @@
 			For more accurate plans, enter your phone number. I do not store your phone number anywhere and I don't send it to anyone except the cellular company.
 		</div> -->
 		<div :style="{opacity: filteredPlans.length ? 1 : 0.1}" style="transition: 1s">
-		<div class="heading">Prioritise</div>
+		<div class="heading">I want a plan with</div>
 		<div class="options-container">
-			<input
+			<!-- <input
 				type="range"
 				id="value-slider"
 				min="0"
@@ -59,58 +59,72 @@
 				step="0.01"
 				@input="sortPlans(); changeValueColors()"
 				v-model="valueWeight"
-			/>
+			/> -->
+			<div class="radio-container">
+				<label>
+					<input type="radio" v-model="valueWeight" value="0" @change="sortPlans">
+					<span :style="getFont('validity')">Value for validity</span>
+				</label>
+				<label>
+					<input type="radio" v-model="valueWeight" value="1" @change="sortPlans">
+					<span :style="getFont('data')">Value for data</span>
+				</label>
+			</div>
 			<div class="slider-labels">
-				<span :style="getFont('validity')">Value for validity</span>
 				<span style="font-size: 1.4em">&nbsp;</span>
-				<span :style="getFont('data')">Value for data</span>
 			</div>
 		</div>
-		<div class="heading">Filters</div>
-		<div class="options-container">
-			<div class="slider-labels">
-				<!-- <p>₹<span>{{ minRate }}</span></p> -->
-				<p>Max. Cost: ₹<span>{{ curRate }}</span></p>
-				<!-- <p>₹<span>{{ maxRate }}</span></p> -->
-			</div>
-			<input
-				type="range"
-				id="rate-slider"
-				:min="minRate"
-				:max="maxRate"
-				step=""
-				v-model="curRate"
-				@touchstart="isMovingCostSlider = true"
-				@touchend="isMovingCostSlider = false"
-				@mousedown="isMovingCostSlider = true"
-				@mouseup="isMovingCostSlider = false"
-			/>
+		<div class="heading filters-heading">
+			Filters
+			<button class="show-filters-button" @click="showFilters = !showFilters">↓</button>
 		</div>
-		<div class="options-container">
-			<div class="slider-labels">
-				<!-- <p><span>{{ minDuration }}</span> days</p> -->
-				<p>Max. Validity: <span>{{ curDuration }}</span> days</p>
-				<!-- <p><span>{{ maxDuration }}</span> days</p> -->
+		<div class="filters-container" :class="{hidden: !showFilters}">
+			<div class="options-container">
+				<div class="slider-labels">
+					<!-- <p>₹<span>{{ minRate }}</span></p> -->
+					<p>Max. Cost: ₹<span>{{ curRate }}</span></p>
+					<!-- <p>₹<span>{{ maxRate }}</span></p> -->
+				</div>
+				<input
+					type="range"
+					id="rate-slider"
+					:min="minRate"
+					:max="maxRate"
+					step=""
+					v-model="curRate"
+					@touchstart="isMovingCostSlider = true"
+					@touchend="isMovingCostSlider = false"
+					@mousedown="isMovingCostSlider = true"
+					@mouseup="isMovingCostSlider = false"
+				/>
 			</div>
-			<input
-				type="range"
-				id="duration-slider"
-				:min="minDuration"
-				:max="maxDuration"
-				step=""
-				v-model="curDuration"
-				@touchstart="isMovingDurationSlider = true"
-				@touchend="isMovingDurationSlider = false"
-				@mousedown="isMovingDurationSlider = true"
-				@mouseup="isMovingDurationSlider = false"
-			/>
+			<div class="options-container">
+				<div class="slider-labels">
+					<!-- <p><span>{{ minDuration }}</span> days</p> -->
+					<p>Max. Validity: <span>{{ curDuration }}</span> days</p>
+					<!-- <p><span>{{ maxDuration }}</span> days</p> -->
+				</div>
+				<input
+					type="range"
+					id="duration-slider"
+					:min="minDuration"
+					:max="maxDuration"
+					step=""
+					v-model="curDuration"
+					@touchstart="isMovingDurationSlider = true"
+					@touchend="isMovingDurationSlider = false"
+					@mousedown="isMovingDurationSlider = true"
+					@mouseup="isMovingDurationSlider = false"
+				/>
+			</div>
 		</div>
 		</div>
 		</div>
 
 		<div class="page-division second-division">
 		<div class="heading">Best Plans For You <span style="color: gray">({{filteredPlans.length}})</span></div>
-		<div class="lds-ellipsis loading-animation" v-if="loadingPlans"><div></div><div></div><div></div><div></div></div>
+		<div class="subheading" v-if="filteredPlans.length">Not all plans may be available for your number.</div>
+		<div class="lds-ellipsis loading-animation" v-if="loadingPlans"></div>
 		<div v-else-if="filteredPlans.length" class="output-plan">
 			<transition-group name="list" tag="div">
 			<div
@@ -122,7 +136,7 @@
 				<!-- <div class="plan-detail-top"> -->
 					<div class="plan-index">
 						<div class="plan-star">
-							<StarFill v-if="index==0" style="color: white" />
+							<!-- <StarFill v-if="index==0" style="color: white" /> -->
 						</div>
 						<div>{{index + 1}}.</div>
 						<div></div>
@@ -175,12 +189,12 @@
 
 <script>
 import { fetchPlans, sortPlansByWeight } from "./api";
-import StarFill from './assets/icons/star-fill.svg';
+// import StarFill from './assets/icons/star-fill.svg?component';
 
 export default {
 	name: "App",
 	components: {
-		StarFill
+		// StarFill
 	},
 	data() {
 		return {
@@ -197,6 +211,7 @@ export default {
 			maxDuration: 0,
 			isMovingCostSlider: false,
 			isMovingDurationSlider: false,
+			showFilters: false,
 			numberOrCarrier: "carrier",
 			preOrPostPaid: "prepaid",
 			// numberOrCarrier: "number",
@@ -230,7 +245,8 @@ export default {
 			let values = await fetchPlans(
 				this.phoneNumber,
 				carrierName,
-				this.outputPlans
+				this.outputPlans,
+				this.valueWeight
 			);
 			if (!values) {
 				return;
@@ -246,9 +262,6 @@ export default {
 		},
 		sortPlans() {
 			sortPlansByWeight(this.outputPlans, this.valueWeight);
-		},
-		changeValueColors() {
-			
 		},
 		getFont(param, constantFontSize) {
 			let weight = parseFloat(this.valueWeight)
@@ -331,6 +344,19 @@ body {
 .heading {
 	font-size: 1.5em;
 	font-weight: bold;
+	margin: 0.5em 0 0.25em 0;
+}
+
+.filters-heading {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 0.5em;
+}
+
+.subheading {
+	color: gray;
+	font-size: 0.8em;
 	margin: 0.5em;
 }
 
@@ -382,7 +408,7 @@ option {
 .second-division {
 	overflow-y: hidden;
 	width: 500px;
-	grid-template-rows: auto 1fr;
+	grid-template-rows: auto auto 1fr;
 }
 
 .top-row {
@@ -536,7 +562,42 @@ option {
 	/* font-size: 0.8em; */
 }
 
+.radio-container {
+	display: flex;
+	justify-content: space-around;
+}
+
+.filters-container {
+	transition: 1s;
+	max-height: 80px;
+}
+
+.show-filters-button {
+	display: none;
+}
+
 @media (max-width: 1000px) {
+
+	.show-filters-button {
+		display: block;
+		cursor: pointer;
+		border: none;
+		color: white;
+		background-color: rgb(3, 158, 255);
+		padding: 0.5em 1em;
+		border-radius: 2px;
+	}
+
+	.filters-container {
+		transition: 0.5s;
+		max-height: 80px;
+		overflow-y: hidden;
+	}
+
+	.filters-container.hidden {
+		max-height: 0;
+	}
+
 	/* Change height to 100.1vh so that address bar vanishes on iOS Safari */
 	#app {
 		height: 100.1vh;

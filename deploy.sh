@@ -1,3 +1,6 @@
+# USAGE
+# sh deploy.sh -s prod
+
 while getopts s:a:f: flag
 do
     case "${flag}" in
