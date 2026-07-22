@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js'
 
 let outputPlans = []
-let baseUrl = 'https://npcf8q2g3l.execute-api.ap-south-1.amazonaws.com/default/fetchCellularPlans'
+let baseUrl = import.meta.env.VITE_API_BASE_URL
 
 let organiseJioPlans = (data) => {
     let planCategories = data.planCategories
@@ -18,7 +18,7 @@ let organiseJioPlans = (data) => {
                     let primeData = plan.primeData
                     let totalCost = parseInt(plan.amount)
     
-                    let planGbPerDay
+                    let planGbPerDay = 0
                     let planGb = 0
                     if (primeData.offerBenefits1 && !primeData.offerBenefits2) {
                         if (primeData.offerBenefits1.includes('/')) {
@@ -58,7 +58,21 @@ let organiseJioPlans = (data) => {
                     let costPerGb = totalCost / totalGb
     
                     if (!gbPerDay) { return }
-                    
+
+                    // The phone-number-specific Jio endpoint returns a slimmer plan
+                    // object with no `misc` field at all, so fall back to parsing the
+                    // free-text description for the same "unlimited voice" signal.
+                    let voiceDetail = plan.misc && plan.misc.details && plan.misc.details.find(detail => detail.header === 'Voice')
+                    let hasCalls
+                    if (voiceDetail) {
+                        hasCalls = voiceDetail.value.toLowerCase().includes('unlimited')
+                    } else {
+                        hasCalls = /unlimited\s+voice/i.test(plan.description || '')
+                    }
+
+                    let ott = (plan.filterKeys && plan.filterKeys.ott) || ''
+                    let has5G = ott.includes('true5g')
+
                     outputPlans.push({
                         // planName,
                         id: plan.id,
@@ -70,6 +84,8 @@ let organiseJioPlans = (data) => {
                         totalGb,
                         costPerGb,
                         gbPerDay,
+                        hasCalls,
+                        has5G,
                     })
                 })
             })
@@ -137,6 +153,11 @@ let organiseAirtelPlans = (respData) => {
             
             if (!gbPerDay) { return }
 
+            let callsDetail = packDetails.find(detail => detail.key === 'Calls')
+            let hasCalls = !!callsDetail && callsDetail.value.toLowerCase().includes('unlimited')
+
+            let packBenefits = (pack.additionalBenefits && pack.additionalBenefits.packBenefits) || []
+            let has5G = packBenefits.some(benefit => benefit.toUpperCase().startsWith('UNLIMITED_5G'))
 
             outputPlans.push({
                 // planName,
@@ -148,6 +169,8 @@ let organiseAirtelPlans = (respData) => {
                 totalGb,
                 costPerGb,
                 gbPerDay,
+                hasCalls,
+                has5G,
             })
         })
     })
@@ -197,6 +220,7 @@ export async function fetchPlans (phoneNumber, carrier, plansList, weight) {
     return {
         cost: costValues,
         duration: DurationValues,
+        carrier: data.carrier,
     }
 }
 
