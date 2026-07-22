@@ -249,6 +249,7 @@ export default {
 				this.valueWeight
 			);
 			if (!values) {
+				this.loadingPlans = false;
 				return;
 			}
 			this.minRate = values.cost.min;
@@ -285,7 +286,6 @@ export default {
 				'color': `rgb(${r}, ${g}, ${b})`,
 			}
 
-			constantFontSize = false
 			if (constantFontSize) {
 				style['font-size'] = `1em`
 			} else {
@@ -647,7 +647,7 @@ option {
 .list-enter-active, .list-leave-active {
 	transition: all 0.2s;
 }
-.list-enter, .list-leave-to{
+.list-enter-from, .list-leave-to{
 	opacity: 0;
 	transform: translateY(30px);
 }

@@ -75,68 +75,7 @@ let organiseJioPlans = (data) => {
             })
         })
     } else {
-        let htmlText = data
-        let el = document.createElement( 'html' );
-        el.innerHTML = htmlText
-        
-        let planAccordion = el.querySelector('#plan-accordion')
-        let cards = planAccordion.querySelectorAll('.card')
-        cards.forEach(card => {
-            let collapse = card.querySelector('.collapse')
-            let plans = collapse.querySelectorAll('.pkv-card-row')
-            plans.forEach(plan => {
-                let totalCost = plan.querySelector('.amt_width').querySelector('.txt_amt').textContent.replace('`','')
-                totalCost = parseInt(totalCost)
-
-                let planDays = plan.querySelector('.val_width').querySelector('.pkv_txt_info').textContent
-                planDays = parseInt(planDays.split(' ')[0])
-
-                let planGbPerDay = 0
-                let planGb = plan.querySelector('.data_width').querySelector('.pkv_txt_info').textContent
-                if (planGb.includes('/')) {
-                    planGbPerDay = parseFloat(planGb.split(' ')[0])
-                    planGb = plan.querySelector('.data_width').querySelector('.txt-small-info').textContent.trim()
-                }
-                if (planGb) {
-                    for (let comp of planGb.split(' ')) {
-                        if (parseFloat(comp)) {
-                            planGb = parseFloat(comp)
-                            break
-                        }
-                    }
-                } else {
-                    planGb = 0
-                }
-
-                let buyButton = plan.querySelector('.btn-md')
-                let onclickFn = buyButton.onclick.toString()
-                let str1 = onclickFn.split('BuyButton(')[1]
-                let str2 = str1.split(');')[0]
-                let planId = str2.split(',')[1].split("'")[1]
-                
-                    
-                // Calculated Information
-                let costPerDay = totalCost / planDays
-                let totalGb = (planGbPerDay * planDays) + planGb
-                let gbPerDay = totalGb / planDays
-                let costPerGb = totalCost / totalGb
-
-                // if (!gbPerDay) { return }
-
-                let planDetails = {
-                    id: planId,
-                    totalCost,
-                    planDays,
-                    planGbPerDay,
-                    planGb,
-                    costPerDay,
-                    totalGb,
-                    costPerGb,
-                    gbPerDay,
-                }
-                outputPlans.push(planDetails)
-            })
-        })
+        throw new Error('Unrecognised Jio plans response shape')
     }
 }
 
@@ -269,14 +208,6 @@ function getMinMaxValues(param) {
         min,
         max,
     }
-}
-
-export function updatePlans(plans) {
-    let output = document.querySelector('.output-plan')
-    output.innerHTML = ''
-    output.innerHTML += JSON.stringify(plans[0], null, 2) + '<br>'
-    output.innerHTML += JSON.stringify(plans[1], null, 2) + '<br>'
-    output.innerHTML += JSON.stringify(plans[2], null, 2) + '<br>'
 }
 
 export function sortPlansByWeight(outputPlans, weight) {

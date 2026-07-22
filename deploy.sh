@@ -19,7 +19,7 @@ fi
 
 powershell Compress-Archive -Path "server/index.js", "server/node_modules" -Update -DestinationPath "index.zip"
 FILENAME=index.zip
-FILESIZE=$(stat -c%s "$FILENAME")
+FILESIZE=$(wc -c < "$FILENAME" | tr -d ' ')
 FILESIZE=`expr $FILESIZE / 1024`
 echo 'Lambda function size:' $FILESIZE KB
 

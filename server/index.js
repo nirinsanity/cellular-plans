@@ -86,7 +86,7 @@ let fetchAirtelPlans = async (phoneNumber) => {
         })
     } catch (err) {
         return {
-            error: err.data.message
+            error: err.response.data.message
         }
     }
 
@@ -118,6 +118,11 @@ async function main (event) {
         if (!(phoneNumber || carrierName)) {
             return createResponse(400, {
                 error: 'No phone number or carrier provided'
+            })
+        }
+        if (phoneNumber && !/^[6-9]\d{9}$/.test(phoneNumber)) {
+            return createResponse(400, {
+                error: 'Please enter a valid 10-digit phone number.'
             })
         }
     }
