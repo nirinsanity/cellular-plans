@@ -1,201 +1,153 @@
 <template>
 	<div id="app">
-		<div class="page-division first-division">
-		<span id="app-version">v1.2.3</span>
-		<!-- <div class="big heading">
-			Cellular Plans
-		</div> -->
-		<!-- <div>
-			<label>
-				<input type="radio" v-model="numberOrCarrier" value="number">
-				Enter phone number
-			</label>
-			<label>
-				<input type="radio" v-model="numberOrCarrier" value="carrier">
-				Select carrier
-			</label>
-		</div> -->
-		<!-- <div>
-			<label>
-				<input type="radio" v-model="preOrPostPaid" value="prepaid">
-				Prepaid
-			</label>
-			<label>
-				<input type="radio" v-model="preOrPostPaid" value="postpaid">
-				Postpaid
-			</label>
-		</div> -->
-		<div class="top-row">
-			<input
-				type="number"
-				pattern="\d*"
-				placeholder="Enter your phone no.."
-				v-model="phoneNumber"
-				@keyup="checkIfEnter"
-				class="phoneNumber"
-				v-if="numberOrCarrier == 'number'"
-			/>
-			<button v-if="numberOrCarrier == 'number'" @click="getPlans">Fetch</button>
-			<select id="selected-carrier" v-model="carrierName" @change="getPlans" v-if="numberOrCarrier == 'carrier'">
-				<option value="-1" disabled selected>Please select a carrier</option>
-				<option value="jio">Jio</option>
-				<option value="airtel">Airtel</option>
-			</select>
-		</div>
-		<!-- <div
-			class="phone-message"
-			:style="{ visibility: numberOrCarrier == 'carrier' ? '' : 'hidden'}"
-		>
-			For more accurate plans, enter your phone number. I do not store your phone number anywhere and I don't send it to anyone except the cellular company.
-		</div> -->
-		<div :style="{opacity: filteredPlans.length ? 1 : 0.1}" style="transition: 1s">
-		<div class="heading">I want a plan with</div>
-		<div class="options-container">
-			<!-- <input
-				type="range"
-				id="value-slider"
-				min="0"
-				max="1"
-				step="0.01"
-				@input="sortPlans(); changeValueColors()"
-				v-model="valueWeight"
-			/> -->
-			<div class="radio-container">
-				<label>
-					<input type="radio" v-model="valueWeight" value="0" @change="sortPlans">
-					<span :style="getFont('validity')">Value for validity</span>
-				</label>
-				<label>
-					<input type="radio" v-model="valueWeight" value="1" @change="sortPlans">
-					<span :style="getFont('data')">Value for data</span>
-				</label>
-			</div>
-			<div class="slider-labels">
-				<span style="font-size: 1.4em">&nbsp;</span>
-			</div>
-		</div>
-		<div class="heading filters-heading">
-			Filters
-			<button class="show-filters-button" @click="showFilters = !showFilters">↓</button>
-		</div>
-		<div class="filters-container" :class="{hidden: !showFilters}">
-			<div class="options-container">
-				<div class="slider-labels">
-					<!-- <p>₹<span>{{ minRate }}</span></p> -->
-					<p>Max. Cost: ₹<span>{{ curRate }}</span></p>
-					<!-- <p>₹<span>{{ maxRate }}</span></p> -->
-				</div>
-				<input
-					type="range"
-					id="rate-slider"
-					:min="minRate"
-					:max="maxRate"
-					step=""
-					v-model="curRate"
-					@touchstart="isMovingCostSlider = true"
-					@touchend="isMovingCostSlider = false"
-					@mousedown="isMovingCostSlider = true"
-					@mouseup="isMovingCostSlider = false"
-				/>
-			</div>
-			<div class="options-container">
-				<div class="slider-labels">
-					<!-- <p><span>{{ minDuration }}</span> days</p> -->
-					<p>Max. Validity: <span>{{ curDuration }}</span> days</p>
-					<!-- <p><span>{{ maxDuration }}</span> days</p> -->
-				</div>
-				<input
-					type="range"
-					id="duration-slider"
-					:min="minDuration"
-					:max="maxDuration"
-					step=""
-					v-model="curDuration"
-					@touchstart="isMovingDurationSlider = true"
-					@touchend="isMovingDurationSlider = false"
-					@mousedown="isMovingDurationSlider = true"
-					@mouseup="isMovingDurationSlider = false"
-				/>
-			</div>
-		</div>
-		</div>
-		</div>
+		<header class="app-header">
+			<h1 class="app-title">Cellular Plans</h1>
+			<span id="app-version">v1.3.0</span>
+		</header>
 
-		<div class="page-division second-division">
-		<div class="heading">Best Plans For You <span style="color: gray">({{filteredPlans.length}})</span></div>
-		<div class="subheading" v-if="filteredPlans.length">Not all plans may be available for your number.</div>
-		<div class="lds-ellipsis loading-animation" v-if="loadingPlans"></div>
-		<div v-else-if="filteredPlans.length" class="output-plan">
-			<transition-group name="list" tag="div">
-			<div
-				v-for="(plan, index) in filteredPlans"
-				:key="'plan' + index"
-				class="cellular-plan"
-				:class="{'best-cellular-plan': index==0}"
-			>
-				<!-- <div class="plan-detail-top"> -->
-					<div class="plan-index">
-						<div class="plan-star">
-							<!-- <StarFill v-if="index==0" style="color: white" /> -->
-						</div>
-						<div>{{index + 1}}.</div>
-						<div></div>
-					</div>
-					<div class="plan-detail">
-						<div class="plan-detail-title">Plan</div>
-						<div class="plan-detail-value" :class="{ 'plan-detail-highlighted': isMovingCostSlider }">₹{{ plan.totalCost }}</div>
-					</div>
-					<div class="plan-detail">
-						<div class="plan-detail-title">Data</div>
-						<p>{{getPlanData(plan)}}</p>
-					</div>
-					<div class="plan-detail">
-						<div class="plan-detail-title">Validity</div>
-						<div class="plan-detail-value" :class="{ 'plan-detail-highlighted': isMovingDurationSlider }">{{ plan.planDays }} days</div>
-					</div>
-					<div class="plan-detail empty-detail">
-						<div class="plan-detail-title">&nbsp;</div>
-						<div style="font-size: 1.4em">&nbsp;</div>
-					</div>
-				<!-- </div> -->
-				<!-- <div class="plan-detail-bottom"> -->
-					<div class="plan-detail">
-						<div class="plan-detail-title">Cost/day</div>
-						<div :style="getFont('validity', true)">₹{{ plan.costPerDay.toFixed(1) }}/day</div>
-					</div>
-					<div class="plan-detail">
-						<div class="plan-detail-title">Cost/GB</div>
-						<div :style="getFont('data', true)">₹{{ plan.costPerGb.toFixed(1) }}/GB</div>
-					</div>
-					<div class="plan-detail">
-						<div class="plan-detail-title">Total Data</div>
-						<div v-if="plan.totalGb >=1">{{ plan.totalGb }}GB</div>
-						<div v-else>{{ (plan.totalGb * 1024).toFixed(1) }}MB</div>
-					</div>
-					<div class="plan-detail empty-detail">
-						<div class="plan-detail-title">&nbsp;</div>
-						<div style="font-size: 1.4em">&nbsp;</div>
-					</div>
-					<button class="buy-button" @click="purchasePlan(plan)">Buy this plan</button>
-					<!-- {{plan}} -->
-				<!-- </div> -->
+		<section class="controls-panel">
+			<div class="top-row">
+				<select id="selected-carrier" v-model="carrierName" @change="onCarrierChange">
+					<option value="-1" disabled selected>Select your carrier</option>
+					<option value="jio">Jio</option>
+					<option value="airtel">Airtel</option>
+				</select>
+				<div class="phone-input-group">
+					<input
+						type="tel"
+						inputmode="numeric"
+						pattern="[0-9]*"
+						maxlength="10"
+						placeholder="Enter phone number (optional)"
+						v-model="phoneNumber"
+						@keyup="checkIfEnter"
+						class="phoneNumber"
+					/>
+					<button :disabled="!isCarrierSelected" @click="getPlans">Fetch</button>
+				</div>
 			</div>
-			</transition-group>
-		</div>
-		<div v-else>No plans for you.</div>
-		</div>
+			<div class="phone-message" :class="{ 'phone-message-error': phoneNumber && !isPhoneNumberValid }">
+				<template v-if="phoneNumber && !isPhoneNumberValid">Please enter a valid 10-digit phone number.</template>
+				<template v-else>For more accurate plans, enter your phone number. I don't store it or send it anywhere except your carrier.</template>
+			</div>
+
+			<div class="toolbar" :style="{ opacity: filteredPlans.length ? 1 : 0.3 }" style="transition: 1s">
+				<div class="priority-toggle">
+					<span class="toolbar-label">Prioritize</span>
+					<div class="radio-container">
+						<label :class="{ active: valueWeight == '0' }">
+							<input type="radio" v-model="valueWeight" value="0" @change="sortPlans">
+							Validity
+						</label>
+						<label :class="{ active: valueWeight == '1' }">
+							<input type="radio" v-model="valueWeight" value="1" @change="sortPlans">
+							Data
+						</label>
+					</div>
+				</div>
+				<button class="show-filters-button" @click="showFilters = !showFilters">Filters ↓</button>
+			</div>
+
+			<div class="filters-container" :class="{ hidden: !showFilters }">
+				<div class="filter">
+					<label>Max. Cost: ₹{{ curRate }}</label>
+					<input
+						type="range"
+						:min="minRate"
+						:max="maxRate"
+						v-model="curRate"
+						@touchstart="isMovingCostSlider = true"
+						@touchend="isMovingCostSlider = false"
+						@mousedown="isMovingCostSlider = true"
+						@mouseup="isMovingCostSlider = false"
+					/>
+				</div>
+				<div class="filter">
+					<label>Max. Validity: {{ curDuration }} days</label>
+					<input
+						type="range"
+						:min="minDuration"
+						:max="maxDuration"
+						v-model="curDuration"
+						@touchstart="isMovingDurationSlider = true"
+						@touchend="isMovingDurationSlider = false"
+						@mousedown="isMovingDurationSlider = true"
+						@mouseup="isMovingDurationSlider = false"
+					/>
+				</div>
+				<div class="filter filter-checkbox">
+					<label>
+						<input type="checkbox" v-model="dataOnlyFilter">
+						Data-only packs
+					</label>
+				</div>
+				<div class="filter filter-checkbox">
+					<label>
+						<input type="checkbox" v-model="fiveGOnlyFilter">
+						5G only
+					</label>
+				</div>
+			</div>
+		</section>
+
+		<section class="results-section">
+			<div class="heading">Best Plans For You <span class="result-count">({{ filteredPlans.length }})</span></div>
+			<div class="subheading" v-if="filteredPlans.length">Not all plans may be available for your number.</div>
+
+			<div class="lds-ellipsis loading-animation" v-if="loadingPlans"></div>
+			<div class="table-wrapper" v-else-if="filteredPlans.length">
+				<table class="plans-table">
+					<thead>
+						<tr>
+							<th class="col-rank">#</th>
+							<th class="col-cost" :class="{ flash: isMovingCostSlider }">Cost</th>
+							<th class="col-data">Data</th>
+							<th class="col-calls">Calls</th>
+							<th class="col-5g">5G</th>
+							<th class="col-validity" :class="{ flash: isMovingDurationSlider }">Validity</th>
+							<th class="col-cost-per-day" :class="{ priority: !isDataPriority }">Cost/day</th>
+							<th class="col-cost-per-gb" :class="{ priority: isDataPriority }">Cost/GB</th>
+							<th class="col-total-data">Total Data</th>
+							<th class="col-action"></th>
+						</tr>
+					</thead>
+					<transition-group name="list" tag="tbody">
+						<tr
+							v-for="(plan, index) in filteredPlans"
+							:key="'plan' + index"
+							:class="{ 'best-plan-row': index == 0 }"
+						>
+							<td class="col-rank" data-label="#"><span class="rank-badge">{{ index + 1 }}</span></td>
+							<td class="col-cost" data-label="Cost" :class="{ flash: isMovingCostSlider }">₹{{ plan.totalCost }}</td>
+							<td class="col-data" data-label="Data">{{ getPlanData(plan) }}</td>
+							<td class="col-calls" data-label="Calls">
+								<span class="calls-badge" :class="{ 'calls-yes': plan.hasCalls }">{{ plan.hasCalls ? '✓' : '—' }}</span>
+							</td>
+							<td class="col-5g" data-label="5G">
+								<span class="calls-badge" :class="{ 'calls-yes': plan.has5G }">{{ plan.has5G ? '✓' : '—' }}</span>
+							</td>
+							<td class="col-validity" data-label="Validity" :class="{ flash: isMovingDurationSlider }">{{ plan.planDays }} days</td>
+							<td class="col-cost-per-day" data-label="Cost/day" :class="{ priority: !isDataPriority }">₹{{ plan.costPerDay.toFixed(1) }}</td>
+							<td class="col-cost-per-gb" data-label="Cost/GB" :class="{ priority: isDataPriority }">₹{{ plan.costPerGb.toFixed(1) }}</td>
+							<td class="col-total-data" data-label="Total Data">
+								<template v-if="plan.totalGb >= 1">{{ plan.totalGb }}GB</template>
+								<template v-else>{{ (plan.totalGb * 1024).toFixed(1) }}MB</template>
+							</td>
+							<td class="col-action"><a class="buy-button" :href="buyLink(plan)" target="_blank" rel="noopener noreferrer">Buy</a></td>
+						</tr>
+					</transition-group>
+				</table>
+			</div>
+			<div class="no-plans" v-else>No plans for you.</div>
+		</section>
 	</div>
 </template>
 
 <script>
 import { fetchPlans, sortPlansByWeight } from "./api";
-// import StarFill from './assets/icons/star-fill.svg?component';
 
 export default {
 	name: "App",
-	components: {
-		// StarFill
-	},
 	data() {
 		return {
 			loadingPlans: false,
@@ -212,16 +164,30 @@ export default {
 			isMovingCostSlider: false,
 			isMovingDurationSlider: false,
 			showFilters: false,
-			numberOrCarrier: "carrier",
-			preOrPostPaid: "prepaid",
-			// numberOrCarrier: "number",
+			dataOnlyFilter: false,
+			fiveGOnlyFilter: false,
 		};
 	},
 	computed: {
+		isPhoneNumberValid() {
+			return /^[6-9]\d{9}$/.test(this.phoneNumber);
+		},
+		isCarrierSelected() {
+			return this.carrierName !== "-1";
+		},
+		isDataPriority() {
+			return this.valueWeight == 1;
+		},
 		filteredPlans() {
 			let filteredPlans = this.outputPlans.filter((plan) => {
 				let val = plan.totalCost <= this.curRate;
 				val = val && plan.planDays <= this.curDuration;
+				if (this.dataOnlyFilter) {
+					val = val && !plan.hasCalls;
+				}
+				if (this.fiveGOnlyFilter) {
+					val = val && plan.has5G;
+				}
 
 				return val;
 			});
@@ -230,9 +196,13 @@ export default {
 	},
 	methods: {
 		checkIfEnter(e) {
-			if (e.keyCode === 13) {
+			if (e.keyCode === 13 && this.isCarrierSelected) {
 				this.getPlans();
 			}
+		},
+		onCarrierChange() {
+			this.phoneNumber = "";
+			this.outputPlans.length = 0;
 		},
 		async getPlans() {
 			this.loadingPlans = true;
@@ -241,9 +211,10 @@ export default {
 			if (carrierName == "-1") {
 				carrierName = null;
 			}
+			let phoneNumber = this.isPhoneNumberValid ? this.phoneNumber : null;
 			this.outputPlans.length = 0;
 			let values = await fetchPlans(
-				this.phoneNumber,
+				phoneNumber,
 				carrierName,
 				this.outputPlans,
 				this.valueWeight
@@ -252,6 +223,7 @@ export default {
 				this.loadingPlans = false;
 				return;
 			}
+			this.carrierName = values.carrier;
 			this.minRate = values.cost.min;
 			this.maxRate = values.cost.max;
 			this.minDuration = values.duration.min;
@@ -264,42 +236,12 @@ export default {
 		sortPlans() {
 			sortPlansByWeight(this.outputPlans, this.valueWeight);
 		},
-		getFont(param, constantFontSize) {
-			let weight = parseFloat(this.valueWeight)
-			if (param == 'validity') {
-				weight = 1 - weight;
-			}
-			let size = 1 + (weight*0.4)
-
-			let r = 54, g = 181, b = 84;
-			if (weight >= 0.5) {
-				r = r - ((1-weight)*r*2);
-				g = g - ((1-weight)*g*2);
-				b = b - ((1-weight)*b*2);
-			} else {
-				r = (0.7-weight)*255
-				g = (0.7-weight)*255
-				b = (0.7-weight)*255
-			}
-
-			let style = {
-				'color': `rgb(${r}, ${g}, ${b})`,
-			}
-
-			if (constantFontSize) {
-				style['font-size'] = `1em`
-			} else {
-				style['font-size'] = `${size}em`
-			}
-
-			return style
-		},
 		getPlanData(plan) {
 			let planStr = ''
 			let planGbPerDay = plan.planGbPerDay
 			if (planGbPerDay) {
 				planStr += `${planGbPerDay}GB/day`
-			} 
+			}
 
 			let planGb = plan.planGb
 			if (planGb) {
@@ -315,14 +257,13 @@ export default {
 
 			return planStr
 		},
-		purchasePlan(plan) {
+		buyLink(plan) {
 			if (this.carrierName == "airtel") {
-				window.open(`https://www.airtel.in/prepaid-recharge/?amount=${plan.totalCost}&anid=RECHARGE-ONLINE`)
+				return `https://www.airtel.in/prepaid-recharge/?amount=${plan.totalCost}&anid=RECHARGE-ONLINE`
 			} else if (this.carrierName == "jio") {
-				window.open(`https://www.jio.com/selfcare/recharge/mobility/?ptab=Popular%20Plans&planId=${plan.id}`)
-			} else {
-				alert("Please select a valid carrier.")
+				return `https://www.jio.com/selfcare/recharge/mobility/?ptab=Popular%20Plans&planId=${plan.id}`
 			}
+			return null
 		}
 	},
 };
@@ -331,49 +272,57 @@ export default {
 <style>
 @import './assets/styles/loader.css';
 
-#app-version {
-	font-size: 0.7rem;
-	margin: 0.5em;
-	color: gray;
+* {
+	box-sizing: border-box;
 }
 
 body {
 	margin: 0;
 }
 
+#app {
+	font-family: Avenir, Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: #2c3e50;
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 0.5em 1.5em 3em;
+}
+
+.app-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.5em;
+}
+
+.app-title {
+	font-size: 1.6em;
+	margin: 0.4em 0;
+	color: #2c3e50;
+}
+
+#app-version {
+	font-size: 0.7rem;
+	color: gray;
+}
+
 .heading {
-	font-size: 1.5em;
+	font-size: 1.4em;
 	font-weight: bold;
 	margin: 0.5em 0 0.25em 0;
 }
 
-.filters-heading {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 0.5em;
+.result-count {
+	color: gray;
+	font-weight: normal;
 }
 
 .subheading {
 	color: gray;
 	font-size: 0.8em;
-	margin: 0.5em;
-}
-
-.big.heading {
-	font-size: 1.7em;
-	color: dimgray	;
-}
-
-#app {
-	font-family: Avenir, Helvetica, Arial, sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-align: center;
-	color: #2c3e50;
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	height: 100vh;
+	margin: 0 0 0.75em;
 }
 
 select {
@@ -388,268 +337,425 @@ option {
 	color: black;
 }
 
-.page-division {
-	/* max-width: 500px; */
-	max-width: 90vw;
-	display: grid;
-	/* align-items: center; */
-	/* align-self: center; */
+.controls-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6em;
+	text-align: left;
 }
 
-.loading-animation {
-	justify-self: center;
-}
-
-.first-division {
-	justify-self: end;
-	align-self: center;
-}
-
-.second-division {
-	overflow-y: hidden;
-	width: 500px;
-	grid-template-rows: auto auto 1fr;
+.results-section {
+	text-align: left;
 }
 
 .top-row {
-	height: 2em;
 	display: flex;
-	width: 500px;
-	max-width: 90vw;
-	/* margin-top: 1em; */
-	/* flex-direction: row;
-	justify-content: center;
-	align-items: center; */
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.6em;
 }
 
 .phone-message {
 	color: darkgray;
 	font-size: 0.8em;
-	max-width: 90vw;
-	width: 500px;
+	margin: 0;
 }
 
-.top-row * {
-	flex: 1;
-	font-size: 1em;
+.phone-message-error {
+	color: #d34a4a;
+}
+
+.phone-input-group {
+	display: flex;
+	flex: 1 1 260px;
+	gap: 0.4em;
+	min-width: 0;
+}
+
+.phone-input-group button {
+	flex: 0 0 auto;
+	white-space: nowrap;
+	border: none;
+	border-radius: 5px;
+	padding: 0.3em 0.8em;
+	background: rgb(3, 158, 255);
+	color: white;
+	cursor: pointer;
+	transition: 0.2s;
+}
+
+.phone-input-group button:hover:not(:disabled) {
+	background: rgb(17, 135, 209);
+}
+
+.phone-input-group button:disabled {
+	background: lightgray;
+	cursor: not-allowed;
 }
 
 .phoneNumber {
-	flex: 3;
+	flex: 1 1 auto;
+	min-width: 0;
 	font-size: 1em;
-	width: 7em;
+	padding: 0.3em 0.5em;
+	border-radius: 5px;
+	border: 1px solid black;
 }
 
-.options-container {
+#selected-carrier {
+	flex: 0 0 auto;
+	padding: 0.3em 0.5em;
+}
+
+.toolbar {
 	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	width: 500px;
-	max-width: 90vw;
-}
-
-.slider-labels {
-	display: flex;
-	justify-content: space-between;
-}
-
-.slider-labels p {
-	margin: 0;
-}
-
-.output-plan {
-	max-width: 95vw;
-	overflow-y: auto;
-	min-height: 20em;
-}
-
-.cellular-plan {
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-	margin: 0.5em;
-	/* padding: 0.25em; */
-	display: grid;
-	grid-template-columns: 0.5fr 1fr 1fr 1fr 0fr;
-	/* display: flex; */
-	/* flex-direction: column; */
-	/* justify-content: space-between; */
-}
-
-.best-cellular-plan .plan-index {
-	background: rgb(252, 186, 3);
-}
-
-.plan-index {
-	grid-row: 1/4;
-	/* display: flex;
 	align-items: center;
-	justify-content: center; */
-	display: grid;
-	grid-template-rows: 2fr 1fr 2fr;
-	font-size: 1.5em;
-	background: rgb(3, 158, 255);
-	color: white;
-}
-
-.plan-star {
-	align-self: end;
-}
-
-.plan-detail {
-	margin: 0.25em 0;
-}
-
-.plan-detail-value {
-	transition: 0.2s;
-}
-
-.plan-detail-highlighted {
-	font-size: 1.4em;
-	color: cornflowerblue;
-}
-
-.empty-detail {
-	width: 0;
-}
-
-.plan-detail p {
-	margin: 0;
-}
-
-.plan-detail-top, .plan-detail-bottom {
-	display: flex;
-}
-
-.plan-detail-top {
 	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.75em;
+	margin-top: 0.5em;
 }
 
-.plan-detail-bottom {
-	justify-content: space-around;
-}
-
-.plan-detail-title {
+.toolbar-label {
 	font-weight: bold;
-	font-size: 0.7em;
+	font-size: 0.85em;
+	color: gray;
+	margin-right: 0.6em;
 }
 
-.buy-button {
-	grid-column: 2/5;
-	justify-self: center;
-	border: none;
-	margin: 0.5em;
-	padding: 0.5em 1em;
-	background: rgb(3, 158, 255);
-	color: white;
-	border-radius: 0.25em;
-	cursor: pointer;
-	transition: 0.2s;
-	font-size: 1em;
-}
-
-.buy-button:hover {
-	background: rgb(17, 135, 209)
-}
-
-.best-cellular-plan .buy-button {
-	background: rgb(252, 186, 3);
-}
-
-.best-cellular-plan .buy-button:hover {
-	background: rgb(219, 161, 0);
-}
-
-.extra-data {
-	/* font-size: 0.8em; */
+.priority-toggle {
+	display: flex;
+	align-items: center;
 }
 
 .radio-container {
 	display: flex;
-	justify-content: space-around;
+	gap: 0.4em;
+}
+
+.radio-container label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35em;
+	padding: 0.3em 0.8em;
+	border-radius: 999px;
+	border: 1px solid #ddd;
+	cursor: pointer;
+	font-size: 0.9em;
+	transition: 0.15s;
+}
+
+.radio-container label.active {
+	background: rgb(3, 158, 255);
+	border-color: rgb(3, 158, 255);
+	color: white;
 }
 
 .filters-container {
-	transition: 1s;
+	display: flex;
+	gap: 1.5em;
+	flex-wrap: wrap;
 	max-height: 80px;
+	transition: 1s;
+}
+
+.filter {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 220px;
+	gap: 0.2em;
+	font-size: 0.85em;
+}
+
+.filter label {
+	color: gray;
+}
+
+.filter-checkbox {
+	flex-direction: row;
+	align-items: center;
+}
+
+.filter-checkbox label {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+	cursor: pointer;
+	color: #2c3e50;
 }
 
 .show-filters-button {
 	display: none;
 }
 
-@media (max-width: 1000px) {
+.no-plans {
+	color: gray;
+	padding: 2em 0;
+	text-align: center;
+}
+
+.loading-animation {
+	display: flex;
+	justify-content: center;
+	padding: 3em 0;
+}
+
+.table-wrapper {
+	overflow-x: auto;
+	overflow-y: auto;
+	max-height: 70vh;
+	max-width: 100%;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.plans-table {
+	width: 100%;
+	border-collapse: collapse;
+	white-space: nowrap;
+}
+
+.plans-table th,
+.plans-table td {
+	padding: 0.6em 0.9em;
+	text-align: right;
+}
+
+.plans-table th.col-data,
+.plans-table td.col-data,
+.plans-table th.col-rank,
+.plans-table td.col-rank {
+	text-align: left;
+}
+
+.plans-table th.col-action,
+.plans-table td.col-action,
+.plans-table th.col-calls,
+.plans-table td.col-calls,
+.plans-table th.col-5g,
+.plans-table td.col-5g {
+	text-align: center;
+}
+
+.calls-badge {
+	display: inline-block;
+	font-weight: bold;
+	color: lightgray;
+}
+
+.calls-badge.calls-yes {
+	color: rgb(54, 181, 84);
+}
+
+.plans-table thead th {
+	position: sticky;
+	top: 0;
+	background: #f7f8fa;
+	font-size: 0.75em;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: gray;
+	border-bottom: 2px solid #eee;
+}
+
+.plans-table tbody tr {
+	border-bottom: 1px solid #eee;
+	transition: background 0.15s;
+}
+
+.plans-table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.plans-table tbody tr:hover {
+	background: #f7fbff;
+}
+
+.best-plan-row {
+	background: rgba(252, 186, 3, 0.12);
+}
+
+.best-plan-row:hover {
+	background: rgba(252, 186, 3, 0.2);
+}
+
+.rank-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.6em;
+	height: 1.6em;
+	border-radius: 50%;
+	background: rgb(3, 158, 255);
+	color: white;
+	font-size: 0.85em;
+	font-weight: bold;
+}
+
+.best-plan-row .rank-badge {
+	background: rgb(252, 186, 3);
+}
+
+th.priority,
+td.priority {
+	background: rgba(3, 158, 255, 0.08);
+	font-weight: bold;
+	color: rgb(3, 158, 255);
+}
+
+.best-plan-row td.priority {
+	background: rgba(252, 186, 3, 0.18);
+	color: #8a6100;
+}
+
+th.flash,
+td.flash {
+	background: rgba(54, 181, 84, 0.15);
+	transition: background 0.2s;
+}
+
+.buy-button {
+	display: inline-block;
+	border: none;
+	padding: 0.4em 1.1em;
+	background: rgb(3, 158, 255);
+	color: white;
+	border-radius: 999px;
+	cursor: pointer;
+	transition: 0.2s;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+.buy-button:hover {
+	background: rgb(17, 135, 209);
+}
+
+.best-plan-row .buy-button {
+	background: rgb(252, 186, 3);
+}
+
+.best-plan-row .buy-button:hover {
+	background: rgb(219, 161, 0);
+}
+
+@media (max-width: 700px) {
+	#app {
+		padding: 0.5em 1em 2em;
+	}
 
 	.show-filters-button {
-		display: block;
+		display: inline-block;
 		cursor: pointer;
 		border: none;
 		color: white;
 		background-color: rgb(3, 158, 255);
-		padding: 0.5em 1em;
-		border-radius: 2px;
+		padding: 0.4em 0.9em;
+		border-radius: 999px;
 	}
 
 	.filters-container {
-		transition: 0.5s;
-		max-height: 80px;
+		flex-direction: column;
 		overflow-y: hidden;
+		transition: max-height 0.4s;
 	}
 
 	.filters-container.hidden {
 		max-height: 0;
 	}
 
-	/* Change height to 100.1vh so that address bar vanishes on iOS Safari */
-	#app {
-		height: 100.1vh;
-		grid-template-columns: 1fr;
-		grid-template-rows: 0.1fr minmax(0.5em, 1fr);
+	/* Below this width, the table becomes a stacked list of label/value rows instead of a horizontally-scrolling grid. */
+	.table-wrapper {
+		max-height: none;
+		overflow: visible;
+		box-shadow: none;
+		border-radius: 0;
 	}
 
-	.page-division {
-		justify-self: center;
+	.plans-table,
+	.plans-table tbody {
+		display: block;
+		width: 100%;
 	}
 
-	.second-division {
-		min-height: 400px;
+	.plans-table thead {
+		display: none;
 	}
 
-	.plan-index {
-		grid-column: 1/5;
-		border-bottom: 1px solid #eee;
-		margin-bottom: 0.25em;
-		padding: 0.25em;
-		grid-template-rows: auto;
-		grid-template-columns: 6fr 1fr 6fr;
+	.plans-table tr {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+		gap: 0.5em 0.6em;
+		margin-bottom: 0.75em;
+		padding: 0.6em 0.7em;
+		padding-top: 2em;
+		border: 1px solid #eee;
+		border-radius: 8px;
+		white-space: normal;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 	}
 
-	.plan-star {
-		justify-self: end;
+	.plans-table td {
+		display: flex;
+		flex-direction: column;
+		text-align: left;
+		padding: 0;
 	}
 
-	.output-plan {
-		overflow-y: scroll;
+	.plans-table td.col-calls,
+	.plans-table td.col-5g {
+		text-align: left;
 	}
 
-	.cellular-plan {
-		grid-template-columns: 1fr 1fr 1fr 0fr;
+	.plans-table td::before {
+		content: attr(data-label);
+		font-weight: bold;
+		font-size: 0.65em;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: gray;
+	}
+
+	.plans-table td.col-data {
+		grid-column: span 2;
+	}
+
+	.plans-table td.col-rank {
+		position: absolute;
+		top: 0.5em;
+		left: 0.5em;
+		padding: 0;
+	}
+
+	.plans-table td.col-rank::before {
+		content: none;
+	}
+
+	.plans-table td.col-action {
+		grid-column: 1 / -1;
+		padding-top: 0.4em;
+	}
+
+	.plans-table td.col-action::before {
+		content: none;
 	}
 
 	.buy-button {
-		grid-column: 1/5;
+		width: 100%;
+		text-align: center;
 	}
 }
 
 /* Animations */
-.list-item {
-	display: inline-block;
-	margin-right: 10px;
-}
-.list-enter-active, .list-leave-active {
+.list-enter-active,
+.list-leave-active {
 	transition: all 0.2s;
 }
-.list-enter-from, .list-leave-to{
-	opacity: 0;
-	transform: translateY(30px);
-}
 
+.list-enter-from,
+.list-leave-to {
+	opacity: 0;
+	transform: translateY(15px);
+}
 </style>
