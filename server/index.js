@@ -20,9 +20,16 @@ let fetchJioPlans = async (phoneNumber) => {
         let cookieUrl = `https://www.jio.com/api/jio-recharge-service/recharge/mobility/number/${phoneNumber}`
         let cookieResp
         try {
-            cookieResp = await axios.get(cookieUrl)
+            // Jio's edge silently hangs the connection (no response, not even
+            // an error) on this endpoint unless a same-site Referer is present.
+            cookieResp = await axios.get(cookieUrl, {
+                headers: {
+                    'Referer': `https://www.jio.com/selfcare/recharge/mobility/plans/?serviceId=${phoneNumber}`,
+                },
+                timeout: 15000,
+            })
         } catch (e) {
-            if (e.response.data.errorMessage === 'NOT_SUBSCRIBED_USER') {
+            if (e.response && e.response.data.errorMessage === 'NOT_SUBSCRIBED_USER') {
                 return {
                     error: 'Please enter a valid Jio number.'
                 }
@@ -40,7 +47,8 @@ let fetchJioPlans = async (phoneNumber) => {
         let resp = await axios.get(url, {
             headers: {
                 'Cookie': cookie,
-            }
+            },
+            timeout: 15000,
         })
         data = resp.data
     } else {
