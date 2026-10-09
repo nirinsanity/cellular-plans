@@ -3,6 +3,11 @@ import CryptoJS from 'crypto-js'
 let outputPlans = []
 let baseUrl = import.meta.env.VITE_API_BASE_URL
 
+let toGb = (amount, unit) => {
+    let value = parseFloat(amount)
+    return unit.toLowerCase() === 'mb' ? value / 1024 : value
+}
+
 let organiseJioPlans = (data) => {
     let planCategories = data.planCategories
     if (planCategories) {
@@ -18,38 +23,35 @@ let organiseJioPlans = (data) => {
                     let primeData = plan.primeData
                     let totalCost = parseInt(plan.amount)
     
+                    // Jio's offerBenefits fields are free text split inconsistently across
+                    // fields, e.g. "1.5" + "GB/Day", "Unlimited 5G" + "+ 2 GB/Day +20 GB",
+                    // "Voice 250 mins 100 SMS 40GB Data", or both null for non-data plans.
+                    // Join them and pull out the GB/MB amounts rather than relying on positions.
+                    let benefitsText = [primeData.offerBenefits1, primeData.offerBenefits2, primeData.offerBenefits5]
+                        .filter(Boolean)
+                        .join(' ')
+
                     let planGbPerDay = 0
+                    let perDayMatch = benefitsText.match(/(\d+(?:\.\d+)?)\s*(GB|MB)\s*\/\s*day/i)
+                    if (perDayMatch) {
+                        planGbPerDay = toGb(perDayMatch[1], perDayMatch[2])
+                    }
+
                     let planGb = 0
-                    if (primeData.offerBenefits1 && !primeData.offerBenefits2) {
-                        if (primeData.offerBenefits1.includes('/')) {
-                            planGbPerDay = parseFloat(primeData.offerBenefits1.split(' ')[0])
-                        } else if (primeData.offerBenefits1.includes(' ')){
-                            planGb = parseFloat(primeData.offerBenefits1.split(' ')[0])
-                        }
-                    } else if (primeData.offerBenefits1 && primeData.offerBenefits2) {
-                        if (primeData.offerBenefits2.includes('/')) {
-                            planGbPerDay = parseFloat(primeData.offerBenefits1)
-                        } else {
-                            planGb = parseFloat(primeData.offerBenefits1)
-                        }
-                    } else {
-                        if (primeData.offerBenefits2.includes('/')) {
-                            planGbPerDay = parseFloat(primeData.offerBenefits2.split(' ')[0])
-                        } else if (primeData.offerBenefits2.includes(' ')){
-                            planGb = parseFloat(primeData.offerBenefits2.split(' ')[0])
-                        }
-    
+                    for (let match of benefitsText.matchAll(/(\d+(?:\.\d+)?)\s*(GB|MB)(?!\s*\/)/gi)) {
+                        planGb += toGb(match[1], match[2])
                     }
-                    if (primeData.offerBenefits5) {
-                        planGb += parseFloat(primeData.offerBenefits5.split(' ')[0])
-                    }
-    
+
+                    // Validity is "28" + "Days", or "28 Days" in offerBenefits4 alone. Other
+                    // units (Hour, Month, Unlimited, a year) aren't comparable, so skip those.
                     let planDays
-                    if (primeData.offerBenefits3 && primeData.offerBenefits4) {
-                        planDays = parseInt(primeData.offerBenefits3)
-                    } else if (primeData.offerBenefits4 && !primeData.offerBenefits3) {
-                        planDays = parseInt(primeData.offerBenefits4.split(' ')[0])
+                    if (primeData.offerBenefits3 && /^\s*days?\s*$/i.test(primeData.offerBenefits4 || '')) {
+                        // Bonus validity is written as e.g. "168+28"
+                        planDays = primeData.offerBenefits3.split('+').reduce((sum, days) => sum + parseInt(days), 0)
+                    } else if (!primeData.offerBenefits3 && /^\s*\d+\s*days?\s*$/i.test(primeData.offerBenefits4 || '')) {
+                        planDays = parseInt(primeData.offerBenefits4)
                     }
+                    if (!planDays) { return }
                     
                     // Calculated Information
                     let costPerDay = totalCost / planDays
